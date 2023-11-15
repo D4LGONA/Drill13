@@ -101,7 +101,8 @@ class Zombie:
             return BehaviorTree.RUNNING # 아니면 계속 진행
 
     def set_random_location(self):
-        pass
+        self.tx, self.ty = random.randint(100, 1200 - 100), random.randint(100, 1024 - 100)
+        return BehaviorTree.SUCCESS
 
     def is_boy_nearby(self, distance):
         pass
@@ -116,6 +117,11 @@ class Zombie:
         a1 = Action('Set target Location', self.set_target_location, 500, 50) # action 노드 생성
         a2 = Action('Move to', self.move_to, 0.5)
 
-        root = SEQ_move_to_target_location = Sequence('Move to target location', a1, a2)
+        SEQ_move_to_target_location = Sequence('Move to target location', a1, a2)
+
+        a3 = Action('Set random location', self.set_random_location)
+
+        root = SEQ_wander = Sequence('Wander', a3, a2) # 랜덤 로케이션을 설정한 후 거기로 이동
+
         self.bt = BehaviorTree(root)
         pass
