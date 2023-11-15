@@ -105,10 +105,18 @@ class Zombie:
         return BehaviorTree.SUCCESS
 
     def is_boy_nearby(self, distance):
-        pass
+        if self.distance_less_than(play_mode.boy.x, play_mode.boy.y, self.x, self.y, distance):
+            return BehaviorTree.SUCCESS
+        else:
+            return BehaviorTree.FAIL
 
     def move_to_boy(self, r=0.5):
-        pass
+        self.state = 'Walk'
+        self.move_slightly_to(play_mode.boy.x, play_mode.boy.y)
+        if self.distance_less_than(play_mode.boy.x, play_mode.boy.y, self.x, self.y, r):  # 목적지에 근접했는지 확인하고
+            return BehaviorTree.SUCCESS  # 근접했으면 success를 리턴
+        else:
+            return BehaviorTree.RUNNING  # 아니면 계속 진행
 
     def get_patrol_location(self):
         pass
@@ -121,7 +129,12 @@ class Zombie:
 
         a3 = Action('Set random location', self.set_random_location)
 
-        root = SEQ_wander = Sequence('Wander', a3, a2) # 랜덤 로케이션을 설정한 후 거기로 이동
+        SEQ_wander = Sequence('Wander', a3, a2) # 랜덤 로케이션을 설정한 후 거기로 이동
+
+        c1 = Condition('소년이 근처에 있나요?' , self.is_boy_nearby, 7) # 몇 미터 거리까지 쫓아오는지
+        a4 = Action('소년을 향해 이동', self.move_to_boy, 0.5)
+
+        root = SEQ_chase_boy = Sequence('소년을 쫓아 가기', c1, a4)
 
         self.bt = BehaviorTree(root)
         pass
