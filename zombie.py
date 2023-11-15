@@ -122,31 +122,43 @@ class Zombie:
         else:
             return BehaviorTree.RUNNING  # 아니면 계속 진행
 
+    def is_boys_ball(self): # 내가 boy보다 공이 많은가?
+        if self.ball_count > play_mode.boy.ball_count:
+            return BehaviorTree.SUCCESS
+        else:
+            return BehaviorTree.FAIL
+
+    def runaway_to_boy(self):
+        self.state = 'Walk'
+        self.move_slightly_to(-(play_mode.boy.x - self.x) + self.x, -(play_mode.boy.y - self.y) + self.y)
+        if not self.is_boy_nearby(7):
+            return BehaviorTree.SUCCESS  # 멀어졌으면 SUCCESS 리턴
+        else:
+            return BehaviorTree.RUNNING  # 아니면 계속 진행
+        pass
+
     def get_patrol_location(self):
         self.tx, self.ty = self.patrol_locations[self.location_n]
         self.location_n = (self.location_n + 1) % len(self.patrol_locations)
         return BehaviorTree.SUCCESS
 
     def build_behavior_tree(self):
-        a1 = Action('Set target Location', self.set_target_location, 500, 50) # action 노드 생성
         a2 = Action('Move to', self.move_to, 0.5)
-
-        SEQ_move_to_target_location = Sequence('Move to target location', a1, a2)
-
         a3 = Action('Set random location', self.set_random_location)
 
         SEQ_wander = Sequence('Wander', a3, a2) # 랜덤 로케이션을 설정한 후 거기로 이동
 
-        c1 = Condition('소년이 근처에 있나요?' , self.is_boy_nearby, 7) # 몇 미터 거리까지 쫓아오는지
+        c1 = Condition('소년이 근처에 있나요?', self.is_boy_nearby, 7) # 몇 미터 거리까지 쫓아오는지
         a4 = Action('소년을 향해 이동', self.move_to_boy, 0.5)
 
         SEQ_chase_boy = Sequence('소년을 쫓아 가기', c1, a4)
 
-        SEL_chase_or_wander = Selector('추적 또는 배회', SEQ_chase_boy, SEQ_wander)
+        root = SEL_chase_or_wander = Selector('추적 또는 배회', SEQ_chase_boy, SEQ_wander)
 
-        a5 = Action('순찰 위치를 가져오기', self.get_patrol_location)
+        a6 = Action('소년 반대 방향으로 이동', self.runaway_to_boy)
 
-        root = SEQ_patrol = Sequence('순찰', a5, a2)
+        root = SEQ_runaway_boy = Sequence('소년에게서 도망치기', c1, a6 )
+
 
         self.bt = BehaviorTree(root)
         pass
