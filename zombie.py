@@ -56,7 +56,7 @@ class Zombie:
     def update(self):
         self.frame = (self.frame + FRAMES_PER_ACTION * ACTION_PER_TIME * game_framework.frame_time) % FRAMES_PER_ACTION
         # fill here
-
+        self.bt.run()
 
     def draw(self):
         if math.cos(self.dir) < 0:
@@ -83,13 +83,22 @@ class Zombie:
         pass
 
     def distance_less_than(self, x1, y1, x2, y2, r):
-        pass
+        distance2 = (x1 - x2) ** 2 + (y1 - y2) ** 2
+        return distance2 < (r * PIXEL_PER_METER) ** 2
 
-    def move_slightly_to(self, tx, ty):
-        pass
+    def move_slightly_to(self, tx, ty): # 목표지점으로 좀비를 살짝 움직이는 함수 ?
+        self.dir = math.atan2(ty - self.y, tx - self.x) # 현재 위치에서 목적지까지의 각도가 나옴(라디안?)
+        self.speed = RUN_SPEED_PPS
+        self.x += self.speed * math.cos(self.dir) * game_framework.frame_time
+        self.y += self.speed * math.sin(self.dir) * game_framework.frame_time
 
     def move_to(self, r=0.5):
-        pass
+        self.state = 'Walk'
+        self.move_slightly_to(self.tx, self.ty)
+        if self.distance_less_than(self.tx, self.ty, self.x, self.y, r): # 목적지에 근접했는지 확인하고
+            return BehaviorTree.SUCCESS # 근접했으면 success를 리턴
+        else:
+            return BehaviorTree.RUNNING # 아니면 계속 진행
 
     def set_random_location(self):
         pass
@@ -104,4 +113,9 @@ class Zombie:
         pass
 
     def build_behavior_tree(self):
+        a1 = Action('Set target Location', self.set_target_location, 500, 50) # action 노드 생성
+        a2 = Action('Move to', self.move_to, 0.5)
+
+        root = SEQ_move_to_target_location = Sequence('Move to target location', a1, a2)
+        self.bt = BehaviorTree(root)
         pass
